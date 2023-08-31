@@ -1,0 +1,7 @@
+{
+  "name": "visitas",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
