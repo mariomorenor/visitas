@@ -1,12 +1,10 @@
 <template>
   <ion-page>
 
-    <ion-content :fullscreen="true">
+    <ion-content v-show="showCamera" :fullscreen="true">
       <ion-card>
-        <ion-card-content  class="cam-container">
-          <div>
-            <qrcode-stream @detect="onDetect"></qrcode-stream>
-          </div>
+        <ion-card-content class="cam-container">
+          <qrcode-stream @detect="onDetect"></qrcode-stream>
         </ion-card-content>
       </ion-card>
       <ion-item>
@@ -60,12 +58,17 @@
 
       </ion-item>
     </ion-content>
+    <ion-content v-show="!showCamera">
+      <div class="main">
+        <ion-button @click="startScan()">Iniciar Scan</ion-button>
+      </div>
+    </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { QrcodeStream } from 'vue-qrcode-reader'
-import { IonContent, IonCard, IonCardContent, IonPage, IonItem, IonLabel, IonChip, IonProgressBar } from '@ionic/vue';
+import { IonContent, IonCard, IonCardContent, IonPage, IonItem, IonLabel, IonChip, IonProgressBar, IonButton } from '@ionic/vue';
 import { ref } from 'vue';
 import moment from "moment"
 
@@ -96,12 +99,17 @@ const visitor = ref<Visitor>()
 const data = ref<DecodedMessage>()
 const isAuthorized = ref<AccessStatus>(AccessStatus.pending)
 const timeToResetGUI = 10 //Time in seconds
-var resetInterval: NodeJS.Timeout;
+const showCamera = ref<Boolean>(false);
+var resetGUIInterval: NodeJS.Timeout;
+const timeToResetCam = 20;
+var resetCamInterval: NodeJS.Timeout;
+
 
 // ***** Functions *****
 
 async function onDetect(detectedCode: any) {
-  clearInterval(resetInterval)
+  clearInterval(resetGUIInterval)
+  clearInterval(resetCamInterval)
   // const message_encoded = atob(detectedCode[0].rawValue)
   const message_encoded = decodeURIComponent(escape(atob(detectedCode[0].rawValue)))
 
@@ -113,9 +121,13 @@ async function onDetect(detectedCode: any) {
   isAuthorized.value = checkAccess();
 
 
-  resetInterval = setTimeout(() => {
+  resetGUIInterval = setTimeout(() => {
     resetGUI();
-  }, timeToResetGUI * 1000)
+  }, timeToResetGUI * 1000);
+
+  resetCamInterval = setTimeout(() => {
+    showCamera.value = false;
+  }, timeToResetCam * 1000)
 
 }
 
@@ -154,6 +166,17 @@ function resetGUI() {
   }
 }
 
+function startScan() {
+  showCamera.value = true;
+
+  resetCamInterval = setTimeout(() => {
+    showCamera.value = false;
+  }, timeToResetCam * 1000)
+
+}
+
+
+
 </script>
 
 <style scoped>
@@ -177,9 +200,17 @@ ion-chip {
 .access {
   margin-left: auto;
   margin-right: auto;
+  text-align: center;
 }
 
-.cam-container{
+.cam-container {
   max-height: 40vh;
+}
+
+.main{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
 </style>
