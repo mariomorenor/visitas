@@ -3,8 +3,10 @@
 
     <ion-content :fullscreen="true">
       <ion-card>
-        <ion-card-content>
-          <qrcode-stream @detect="onDetect"></qrcode-stream>
+        <ion-card-content  class="cam-container">
+          <div>
+            <qrcode-stream @detect="onDetect"></qrcode-stream>
+          </div>
         </ion-card-content>
       </ion-card>
       <ion-item>
@@ -175,5 +177,9 @@ ion-chip {
 .access {
   margin-left: auto;
   margin-right: auto;
+}
+
+.cam-container{
+  max-height: 40vh;
 }
 </style>
