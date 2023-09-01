@@ -66,6 +66,14 @@
       <div class="main">
         <ion-button @click="startScan()">Iniciar Scan</ion-button>
       </div>
+      <footer>
+        <div class="footer-container">
+          <ion-text color="medium">
+            <small>Desarrollado en DTI - PUCESD por Ing. Jonathan Moreno</small>
+          </ion-text>
+          <!-- <small>Desarrollado en DTI - PUCESD por Jonathan Moreno</small> -->
+        </div>
+      </footer>
     </ion-content>
   </ion-page>
 </template>
@@ -225,5 +233,18 @@ ion-chip {
   justify-content: center;
   align-items: center;
   height: 100vh;
+}
+
+footer {
+  position: absolute;
+  width: 100%;
+  bottom: 1%;
+}
+
+.footer-container {
+  margin-left: auto;
+  margin-right: auto;
+  color: #777777;
+  text-align: center;
 }
 </style>
