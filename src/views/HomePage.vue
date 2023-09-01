@@ -4,7 +4,7 @@
     <ion-content v-show="showCamera" :fullscreen="true">
       <ion-card>
         <ion-card-content class="cam-container">
-          <qrcode-stream @detect="onDetect"></qrcode-stream>
+          <qrcode-stream :paused="paused" @detect="onDetect"></qrcode-stream>
         </ion-card-content>
       </ion-card>
       <ion-item>
@@ -52,7 +52,11 @@
       <ion-item>
         <div class="access">
           <ion-chip v-if="isAuthorized == AccessStatus.authorized">INGRESO AUTORIZADO</ion-chip>
-          <ion-chip class="unauthorized" v-if="isAuthorized == AccessStatus.unauthorized">INGRESO NO AUTORIZADO</ion-chip>
+          <div v-if="isAuthorized == AccessStatus.unauthorized">
+            <ion-chip class="unauthorized">INGRESO NO AUTORIZADO</ion-chip>
+            <br>
+            <ion-text color="danger">Código QR Inválido</ion-text>
+          </div>
         </div>
         <ion-progress-bar v-if="isAuthorized == AccessStatus.pending" type="indeterminate"></ion-progress-bar>
 
@@ -68,7 +72,7 @@
 
 <script setup lang="ts">
 import { QrcodeStream } from 'vue-qrcode-reader'
-import { IonContent, IonCard, IonCardContent, IonPage, IonItem, IonLabel, IonChip, IonProgressBar, IonButton } from '@ionic/vue';
+import { IonContent, IonCard, IonCardContent, IonPage, IonItem, IonLabel, IonChip, IonProgressBar, IonButton, IonText } from '@ionic/vue';
 import { ref } from 'vue';
 import moment from "moment"
 
@@ -103,24 +107,29 @@ const showCamera = ref<Boolean>(false);
 var resetGUIInterval: NodeJS.Timeout;
 const timeToResetCam = 20;
 var resetCamInterval: NodeJS.Timeout;
+var paused = ref(false)
 
 
 // ***** Functions *****
 
 async function onDetect(detectedCode: any) {
-  clearInterval(resetGUIInterval)
-  clearInterval(resetCamInterval)
-  // const message_encoded = atob(detectedCode[0].rawValue)
-  const message_encoded = decodeURIComponent(escape(atob(detectedCode[0].rawValue)))
+  try {
+    clearInterval(resetGUIInterval)
+    clearInterval(resetCamInterval)
 
-  data.value = JSON.parse(message_encoded.replaceAll("'", '"'))
-  console.log(data);
+    // const message_encoded = atob(detectedCode[0].rawValue)
+    const message_encoded = decodeURIComponent(escape(atob(detectedCode[0].rawValue)))
 
-  visitor.value = data.value?.visitante
+    data.value = JSON.parse(message_encoded.replaceAll("'", '"'))
+    console.log(data);
 
-  isAuthorized.value = checkAccess();
+    visitor.value = data.value?.visitante
 
+    isAuthorized.value = checkAccess();
 
+  } catch (error) {
+    isAuthorized.value = AccessStatus.unauthorized
+  }
   resetGUIInterval = setTimeout(() => {
     resetGUI();
   }, timeToResetGUI * 1000);
@@ -129,6 +138,10 @@ async function onDetect(detectedCode: any) {
     showCamera.value = false;
   }, timeToResetCam * 1000)
 
+  paused.value = true;
+  setTimeout(() => {
+    paused.value = false;
+  }, 1);
 }
 
 function checkAccess() {
@@ -207,7 +220,7 @@ ion-chip {
   max-height: 40vh;
 }
 
-.main{
+.main {
   display: flex;
   justify-content: center;
   align-items: center;
