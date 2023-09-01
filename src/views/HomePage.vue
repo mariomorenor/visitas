@@ -1,56 +1,179 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true">
-      <ion-toolbar>
-        <ion-title>Blank</ion-title>
-      </ion-toolbar>
-    </ion-header>
 
     <ion-content :fullscreen="true">
-      <ion-header collapse="condense">
-        <ion-toolbar>
-          <ion-title size="large">Blank</ion-title>
-        </ion-toolbar>
-      </ion-header>
+      <ion-card>
+        <ion-card-content>
+          <qrcode-stream @detect="onDetect"></qrcode-stream>
+        </ion-card-content>
+      </ion-card>
+      <ion-item>
+        <ion-label>
+          <p>Visitante</p>
+          <h1 v-text="visitor?.nombre"></h1>
+          <p>
+            <strong>Cédula: </strong>
+            <span v-text="visitor?.cedula"></span>
+          </p>
+          <p>
+            <strong>Correo: </strong>
+            <span v-text="visitor?.correo"></span>
+          </p>
+        </ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-label>
+          <h3>Accesso</h3>
+          <p>
+            <strong>Fecha Inicio: </strong>
+            <span v-text="data?.fecha_inicio"></span>
+          </p>
+          <p>
+            <strong>Fecha Fin: </strong>
+            <span v-text="data?.fecha_fin"></span>
+          </p>
+        </ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-label>
+          <p>Destino</p>
+          <h2 v-text="data?.receptor"></h2>
+          <p>
+            <strong>Departamento: </strong><br>
+            <span v-text="data?.departamento"></span>
+          </p>
+          <p>
+            <strong>Motivo: </strong><br>
+            <span v-text="data?.motivo"></span>
+          </p>
 
-      <div id="container">
-        <strong>Ready to create an app?</strong>
-        <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-      </div>
+        </ion-label>
+      </ion-item>
+      <ion-item>
+        <div class="access">
+          <ion-chip v-if="isAuthorized == AccessStatus.authorized">INGRESO AUTORIZADO</ion-chip>
+          <ion-chip class="unauthorized" v-if="isAuthorized == AccessStatus.unauthorized">INGRESO NO AUTORIZADO</ion-chip>
+        </div>
+        <ion-progress-bar v-if="isAuthorized == AccessStatus.pending" type="indeterminate"></ion-progress-bar>
+
+      </ion-item>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue';
+import { QrcodeStream } from 'vue-qrcode-reader'
+import { IonContent, IonCard, IonCardContent, IonPage, IonItem, IonLabel, IonChip, IonProgressBar } from '@ionic/vue';
+import { ref } from 'vue';
+import moment from "moment"
+
+// ****** Type Definitions *****
+type DecodedMessage = {
+  departamento: string,
+  fecha_inicio: Date | null,
+  fecha_fin: Date | null,
+  motivo: string,
+  receptor: string,
+  visitante: Visitor
+}
+
+type Visitor = {
+  nombre: string,
+  cedula: string,
+  correo: string
+}
+
+enum AccessStatus {
+  authorized,
+  unauthorized,
+  pending
+}
+
+// **** Variables *****
+const visitor = ref<Visitor>()
+const data = ref<DecodedMessage>()
+const isAuthorized = ref<AccessStatus>(AccessStatus.pending)
+const timeToResetGUI = 10 //Time in seconds
+var resetInterval: NodeJS.Timeout;
+
+// ***** Functions *****
+
+async function onDetect(detectedCode: any) {
+  clearInterval(resetInterval)
+  // const message_encoded = atob(detectedCode[0].rawValue)
+  const message_encoded = decodeURIComponent(escape(atob(detectedCode[0].rawValue)))
+
+  data.value = JSON.parse(message_encoded.replaceAll("'", '"'))
+  console.log(data);
+
+  visitor.value = data.value?.visitante
+
+  isAuthorized.value = checkAccess();
+
+
+  resetInterval = setTimeout(() => {
+    resetGUI();
+  }, timeToResetGUI * 1000)
+
+}
+
+function checkAccess() {
+  let today = moment()
+  let fecha_inicio = moment(data.value?.fecha_inicio)
+  let fecha_fin = moment(data.value?.fecha_fin)
+
+  if (fecha_fin && (today >= fecha_inicio && today <= fecha_fin)) {
+    return AccessStatus.authorized;
+  }
+
+  if (today >= fecha_inicio) {
+    return AccessStatus.authorized;
+  }
+
+
+  return AccessStatus.unauthorized;
+
+}
+
+function resetGUI() {
+  isAuthorized.value = AccessStatus.pending
+  visitor.value = {
+    nombre: "",
+    cedula: "",
+    correo: ""
+  }
+  data.value = {
+    departamento: "",
+    fecha_fin: null,
+    fecha_inicio: null,
+    motivo: "",
+    visitante: visitor.value,
+    receptor: ""
+  }
+}
+
 </script>
 
 <style scoped>
-#container {
-  text-align: center;
-  
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+.scann-container {
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 5%;
+  width: 75vw;
 }
 
-#container strong {
-  font-size: 20px;
-  line-height: 26px;
+.unauthorized {
+  --background: #df0000;
+  --color: white;
 }
 
-#container p {
-  font-size: 16px;
-  line-height: 22px;
-  
-  color: #8c8c8c;
-  
-  margin: 0;
+ion-chip {
+  --background: #00A0DF;
+  --color: white;
 }
 
-#container a {
-  text-decoration: none;
+.access {
+  margin-left: auto;
+  margin-right: auto;
 }
 </style>
