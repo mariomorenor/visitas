@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.visitas',
+  appId: 'jm.dev.visitas',
   appName: 'Visitas PUCESD',
   webDir: 'dist',
   server: {
