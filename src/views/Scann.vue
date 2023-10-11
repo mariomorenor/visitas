@@ -32,18 +32,16 @@ var intervalGUI: any;
 const timeToReset = 5 //Seconds
 const loading = ref(true);
 
-var paused = ref(false);
+var paused = ref("auto");
 
 const server = "https://unitec.pucesd.edu.ec"
 
 async function onDetect(message: any) {
 
-    const dec = await message;
-
     try {
-        paused.value = true;
+        paused.value = "off";
         clearInterval(intervalGUI);
-        const message_encoded = decodeURIComponent(escape(atob(dec.content)));
+        const message_encoded = decodeURIComponent(escape(atob(message)));
 
         data.value = JSON.parse(message_encoded.replaceAll("'", '"'));
         const result = await checkAccess(data.value);
@@ -58,9 +56,9 @@ async function onDetect(message: any) {
         console.log(error);
 
     } finally {
-        paused.value = true;
+        paused.value = "off";
         setTimeout(() => {
-            paused.value = false;
+            paused.value = "auto";
         }, 1);
         resetGUI();
     }
@@ -103,8 +101,8 @@ function resetGUI() {
 
         <ion-content :fullscreen="true">
             <ion-card>
-                <ion-card-content class="cam-container">
-                    <qrcode-stream :paused="paused" @detect="onDetect"></qrcode-stream>
+                <ion-card-content v-show="paused == 'auto'" class="cam-container">
+                    <qrcode-stream :camera="paused" @decode="onDetect"></qrcode-stream>
                 </ion-card-content>
             </ion-card>
             <ion-item>
