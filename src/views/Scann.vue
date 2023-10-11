@@ -4,7 +4,7 @@ import { IonContent, IonCard, IonCardContent, IonPage, IonItem, IonLabel, IonChi
 import { ref } from 'vue';
 import moment from "moment";
 import { CapacitorHttp as Http, HttpOptions, HttpResponse, CapacitorCookies } from '@capacitor/core';
-
+// import { Http } from '@capacitor-community/http';
 
 type DecodedMessage = {
     id: number,
@@ -37,31 +37,42 @@ var paused = ref(false);
 const server = "https://unitec.pucesd.edu.ec"
 
 async function onDetect(message: any) {
-    paused.value = true;
-    clearInterval(intervalGUI);
-    const message_encoded = decodeURIComponent(escape(atob(message[0].rawValue)));
 
-    data.value = JSON.parse(message_encoded.replaceAll("'", '"'));
-    const result = await checkAccess(data.value);
+    const dec = await message;
 
-    visitor.value.nombre = result.visitante
-    valid_until.value = result.valido_hasta == 0 ? moment('20991231').format("Y-MM-DD") : moment(result.valido_hasta).format("Y-MM-DD")
-    isAuthorized.value = result.estado == 'valido' ? AccessStatus.authorized : AccessStatus.unauthorized;
-    loading.value = false;
+    try {
+        paused.value = true;
+        clearInterval(intervalGUI);
+        const message_encoded = decodeURIComponent(escape(atob(dec.content)));
+
+        data.value = JSON.parse(message_encoded.replaceAll("'", '"'));
+        const result = await checkAccess(data.value);
+
+        visitor.value.nombre = result.visitante
+        valid_until.value = result.valido_hasta == 0 ? moment('20991231').format("Y-MM-DD") : moment(result.valido_hasta).format("Y-MM-DD")
+        isAuthorized.value = result.estado == 'valido' ? AccessStatus.authorized : AccessStatus.unauthorized;
+        loading.value = false;
 
 
-    paused.value = true;
-    setTimeout(() => {
-        paused.value = false;
-    }, 1);
-    resetGUI();
+    } catch (error) {
+        console.log(error);
+
+    } finally {
+        paused.value = true;
+        setTimeout(() => {
+            paused.value = false;
+        }, 1);
+        resetGUI();
+    }
+
+
 }
 
 async function checkAccess(info: DecodedMessage | any) {
     const isNative = !getPlatforms().includes('desktop')
     const options: HttpOptions = {
-        // url: isNative ? `${server}/api/visitas/check-access/${info.id}` : `/api/visitas/check-access/${info.id}`,
-        url: `https://unitec.pucesd.edu.ec/api/visitas/check-access/${info.id}`,
+        url: isNative ? `${server}/api/visitas/check-access/${info.id}` : `/api/visitas/check-access/${info.id}`,
+        // url: `http://localhost:8069/api/visitas/check-access/${info.id}`,
         headers: { 'Content-Type': 'application/json' },
         data: {
             params: { id: info.id }
@@ -71,7 +82,7 @@ async function checkAccess(info: DecodedMessage | any) {
     }
     const response = await Http.request(options);
     console.log(response);
-    
+
     return response.data.result
 }
 
@@ -119,7 +130,7 @@ function resetGUI() {
                 <ion-progress-bar v-if="loading" type="indeterminate"></ion-progress-bar>
             </ion-item>
             <div class="img-container">
-                <img class="img-logo" src="/assets/LogoPUCESD.png"/>
+                <img class="img-logo" src="/assets/LogoPUCESD.png" />
             </div>
         </ion-content>
         <footer>
@@ -180,11 +191,11 @@ footer {
     text-align: center;
 }
 
-.img-logo{
+.img-logo {
     width: 50vw;
 }
 
-.img-container{
+.img-container {
     margin: 0 auto;
     text-align: center;
 }
