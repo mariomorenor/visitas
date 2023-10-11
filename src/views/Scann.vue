@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import { QrcodeStream } from 'vue-qrcode-reader'
-import { IonContent, IonCard, IonCardContent, IonPage, IonItem, IonLabel, IonChip, IonProgressBar, IonText, IonImg } from '@ionic/vue';
+import { IonContent, IonCard, IonCardContent, IonPage, IonItem, IonLabel, IonChip, IonProgressBar, IonText, IonImg, getPlatforms } from '@ionic/vue';
 import { ref } from 'vue';
 import moment from "moment";
 import { CapacitorHttp } from '@capacitor/core';
+
 
 type DecodedMessage = {
     id: number,
@@ -33,6 +34,8 @@ const loading = ref(true);
 
 var paused = ref(false);
 
+const server = "https://unitec.pucesd.edu.ec"
+
 async function onDetect(message: any) {
     paused.value = true;
     clearInterval(intervalGUI);
@@ -55,8 +58,9 @@ async function onDetect(message: any) {
 }
 
 async function checkAccess(info: DecodedMessage | any) {
+    const isNative = !getPlatforms().includes('desktop')
     const options = {
-        url: `api/visitas/check-access/${info.id}`,
+        url: isNative ? `${server}/api/visitas/check-access/${info.id}` : `/api/visitas/check-access/${info.id}`,
         headers: { 'Content-Type': 'application/json' },
         data: {
             params: { id: info.id }
