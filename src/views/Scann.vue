@@ -3,7 +3,7 @@ import { QrcodeStream } from 'vue-qrcode-reader'
 import { IonContent, IonCard, IonCardContent, IonPage, IonItem, IonLabel, IonChip, IonProgressBar, IonText, IonImg, getPlatforms } from '@ionic/vue';
 import { ref } from 'vue';
 import moment from "moment";
-import { CapacitorHttp } from '@capacitor/core';
+import { CapacitorHttp as Http, HttpOptions, HttpResponse, CapacitorCookies } from '@capacitor/core';
 
 
 type DecodedMessage = {
@@ -59,8 +59,9 @@ async function onDetect(message: any) {
 
 async function checkAccess(info: DecodedMessage | any) {
     const isNative = !getPlatforms().includes('desktop')
-    const options = {
-        url: isNative ? `${server}/api/visitas/check-access/${info.id}` : `/api/visitas/check-access/${info.id}`,
+    const options: HttpOptions = {
+        // url: isNative ? `${server}/api/visitas/check-access/${info.id}` : `/api/visitas/check-access/${info.id}`,
+        url: `https://unitec.pucesd.edu.ec/api/visitas/check-access/${info.id}`,
         headers: { 'Content-Type': 'application/json' },
         data: {
             params: { id: info.id }
@@ -68,7 +69,9 @@ async function checkAccess(info: DecodedMessage | any) {
         method: "POST"
 
     }
-    const response = await CapacitorHttp.post(options);
+    const response = await Http.request(options);
+    console.log(response);
+    
     return response.data.result
 }
 
@@ -115,7 +118,9 @@ function resetGUI() {
             <ion-item lines="none">
                 <ion-progress-bar v-if="loading" type="indeterminate"></ion-progress-bar>
             </ion-item>
-            <ion-img src="/assets/LogoPUCESD.png"></ion-img>
+            <div class="img-container">
+                <img class="img-logo" src="/assets/LogoPUCESD.png"/>
+            </div>
         </ion-content>
         <footer>
             <div class="footer-container">
@@ -172,6 +177,15 @@ footer {
     margin-left: auto;
     margin-right: auto;
     color: #777777;
+    text-align: center;
+}
+
+.img-logo{
+    width: 50vw;
+}
+
+.img-container{
+    margin: 0 auto;
     text-align: center;
 }
 </style>
